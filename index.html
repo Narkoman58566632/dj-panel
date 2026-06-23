@@ -2,38 +2,117 @@
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
-<title>OBS Widget</title>
-<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DJ панель — hotmail_585</title>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
-body{background:transparent;font-family:'Unbounded',sans-serif;padding:16px;overflow:hidden;}
-@keyframes scroll{0%{transform:translateX(100%);}100%{transform:translateX(-100%);}}
-@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.6;}}
-.widget{background:rgba(20,0,0,0.85);border:1px solid #c0392b;border-radius:12px;padding:10px 16px;min-width:320px;max-width:480px;backdrop-filter:blur(4px);}
-.top-row{display:flex;align-items:center;gap:10px;overflow:hidden;}
-.now-label{font-size:9px;color:#ff6060;text-transform:uppercase;letter-spacing:0.1em;white-space:nowrap;animation:pulse 1.5s ease-in-out infinite;}
-.track-scroll{flex:1;overflow:hidden;position:relative;}
-.track-text{font-size:13px;color:#fff;white-space:nowrap;display:inline-block;animation:scroll 12s linear infinite;}
-.track-text.short{animation:none;}
-.from-text{font-size:10px;color:#7a3535;margin-top:4px;}
-.queue-row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
-.q-pill{font-size:10px;color:#c08080;background:#2a0808;border:1px solid #3d1010;border-radius:99px;padding:2px 8px;white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis;}
-.no-track{font-size:12px;color:#4a1a1a;text-align:center;padding:4px 0;}
+body{background:#1a0000;min-height:100vh;font-family:'Inter',sans-serif;padding:24px 16px;color:#e0a0a0;}
+h1{font-family:'Unbounded',sans-serif;font-size:18px;color:#ff4444;margin-bottom:6px;}
+.subtitle{font-size:12px;color:#7a3535;margin-bottom:24px;}
+.section{background:#240808;border:1px solid #3d1010;border-radius:16px;padding:20px;margin-bottom:16px;}
+.section-title{font-size:11px;color:#7a3535;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.badge{background:#6b0000;color:#ff8080;border-radius:99px;font-size:10px;padding:2px 8px;font-family:'Unbounded',sans-serif;}
+
+/* Twitch section */
+.twitch-status{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.twitch-dot{width:8px;height:8px;border-radius:50%;background:#4a1515;flex-shrink:0;transition:background 0.3s;}
+.twitch-dot.connected{background:#00e676;box-shadow:0 0 6px #00e676aa;}
+.twitch-dot.connecting{background:#ffaa00;animation:pulse 1s infinite;}
+.twitch-label{font-size:12px;color:#7a3535;}
+.twitch-label.connected{color:#7dcc7d;}
+.twitch-label.connecting{color:#ffaa00;}
+.twitch-btn{background:#6441a5;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:12px;cursor:pointer;font-family:'Unbounded',sans-serif;transition:background 0.2s;white-space:nowrap;}
+.twitch-btn:hover{background:#7b54c9;}
+.twitch-btn.disconnect{background:#3d1010;color:#e08080;border:1px solid #5a2020;}
+.twitch-btn.disconnect:hover{background:#501515;}
+.twitch-info{font-size:11px;color:#5a2020;margin-top:6px;line-height:1.5;}
+.reward-setup{margin-top:12px;padding-top:12px;border-top:1px solid #2d0a0a;}
+.reward-label{font-size:11px;color:#7a3535;margin-bottom:6px;}
+.reward-input{background:#300d0d;border:1px solid #4a1515;border-radius:8px;padding:8px 12px;color:#f0c0c0;font-size:13px;font-family:'Inter',sans-serif;outline:none;width:100%;transition:border 0.2s;}
+.reward-input:focus{border-color:#6441a5;}
+.reward-input::placeholder{color:#4a1515;}
+.reward-hint{font-size:10px;color:#4a1515;margin-top:4px;}
+
+/* existing styles */
+.req-item{background:#300d0d;border:1px solid #4a1515;border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;}
+.req-item:last-child{margin-bottom:0;}
+.req-thumb{width:40px;height:40px;border-radius:8px;background:#3d1010;overflow:hidden;flex-shrink:0;}
+.req-thumb img{width:100%;height:100%;object-fit:cover;}
+.req-info{flex:1;min-width:0;}
+.req-name{font-size:13px;color:#f0c0c0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px;}
+.req-from{font-size:11px;color:#7a3535;}
+.req-actions{display:flex;gap:6px;flex-shrink:0;}
+.btn-approve{background:#1a3d1a;color:#7dcc7d;border:1px solid #2a5a2a;border-radius:8px;padding:7px 14px;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif;transition:background 0.2s;}
+.btn-approve:hover{background:#245024;}
+.btn-reject{background:#3d1010;color:#e08080;border:1px solid #5a2020;border-radius:8px;padding:7px 14px;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif;transition:background 0.2s;}
+.btn-reject:hover{background:#501515;}
+.queue-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #2d0a0a;}
+.queue-item:last-child{border-bottom:none;}
+.q-num{font-size:11px;color:#5a2020;min-width:20px;font-family:'Unbounded',sans-serif;}
+.q-info{flex:1;min-width:0;}
+.q-name{font-size:13px;color:#e0a0a0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.q-from{font-size:11px;color:#6a2a2a;margin-top:2px;}
+.now-pill{background:#4a000033;border:1px solid #e0303066;border-radius:99px;font-size:9px;color:#ff6060;padding:3px 9px;white-space:nowrap;font-family:'Unbounded',sans-serif;}
+.twitch-pill{background:#6441a533;border:1px solid #6441a566;border-radius:99px;font-size:9px;color:#b09fe0;padding:3px 9px;white-space:nowrap;font-family:'Unbounded',sans-serif;margin-left:4px;}
+.btn-del{background:#2a0a0a;color:#c06060;border:1px solid #4a1515;border-radius:8px;padding:5px 10px;font-size:11px;cursor:pointer;flex-shrink:0;}
+.empty{font-size:13px;color:#4a1a1a;padding:12px 0;text-align:center;}
+.controls-row{display:flex;gap:8px;flex-wrap:wrap;}
+.ctrl-btn{background:#300d0d;color:#e0a0a0;border:1px solid #4a1515;border-radius:10px;padding:10px 16px;font-size:12px;cursor:pointer;font-family:'Unbounded',sans-serif;transition:background 0.2s;}
+.ctrl-btn:hover{background:#3d1010;}
+.log-box{background:#1a0000;border:1px solid #2d0a0a;border-radius:8px;padding:10px;font-size:11px;color:#5a2020;font-family:monospace;max-height:130px;overflow-y:auto;margin-top:10px;}
+.log-box .log-ok{color:#3d7a3d;}
+.log-box .log-err{color:#8b2020;}
+.log-box .log-info{color:#4a3570;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
 </style>
 </head>
 <body>
-<div class="widget" id="widget">
-  <div class="top-row">
-    <span class="now-label">&#9835; grає</span>
-    <div class="track-scroll"><span class="track-text" id="track-title">немає треку</span></div>
+<h1>&#9835; DJ панель</h1>
+<div class="subtitle">hotmail_585 — керування музикою</div>
+
+<!-- TWITCH SECTION -->
+<div class="section">
+  <div class="section-title">🟣 twitch channel points</div>
+  <div class="twitch-status">
+    <div class="twitch-dot" id="twitch-dot"></div>
+    <span class="twitch-label" id="twitch-label">не підключено</span>
+    <button class="twitch-btn" id="twitch-btn" onclick="twitchLogin()">Підключити Twitch</button>
   </div>
-  <div class="from-text" id="track-from"></div>
-  <div class="queue-row" id="queue-row"></div>
+  <div class="twitch-info" id="twitch-info">
+    Після підключення — відкрий Twitch → Creator Dashboard → Channel Points → Rewards → створи нагороду де глядач вводить YouTube посилання (увімкни "Require Viewer to Enter Text").
+  </div>
+  <div class="reward-setup" id="reward-setup" style="display:none">
+    <div class="reward-label">назва нагороди (точна, як на Twitch)</div>
+    <input class="reward-input" id="reward-name-input" type="text" placeholder="🎵 Замов трек" value="🎵 Замов трек">
+    <div class="reward-hint">⚠️ Має співпадати з назвою нагороди в Twitch Channel Points</div>
+  </div>
+  <div class="log-box" id="twitch-log"></div>
+</div>
+
+<div class="section">
+  <div class="section-title">нові запити <span class="badge" id="pending-badge">0</span></div>
+  <div id="pending-list"><div class="empty">запитів немає</div></div>
+</div>
+
+<div class="section">
+  <div class="section-title">черга треків <span class="badge" id="queue-badge">0</span></div>
+  <div id="queue-list"><div class="empty">черга порожня</div></div>
+</div>
+
+<div class="section">
+  <div class="section-title">керування</div>
+  <div class="controls-row">
+    <button class="ctrl-btn" onclick="skipCurrent()">&#9654;&#9654; пропустити трек</button>
+    <button class="ctrl-btn" onclick="clearAll()">&#128465; очистити все</button>
+    <button class="ctrl-btn" onclick="stopCurrentTrack()">⏸</button>
+    <button class="ctrl-btn" onclick="resumeCurrentTrack()">▶</button>
+  </div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getDatabase, ref, onValue, update, remove, push, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDhLUKfZbwe2F1cZlCYF0NzbL6CsK00uc8",
@@ -48,108 +127,330 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const queueRef = ref(db, 'queue');
-const controlRef = ref(db, 'control');
 
-onValue(controlRef, (snap) => {
-  const data = snap.val();
-  if (!data || !player) return;
+// ── TWITCH CONFIG ────────────────────────────────────────────────
+// Створи застосунок на https://dev.twitch.tv/console/apps
+// Redirect URI: http://localhost або адреса цього файлу (якщо хостиш)
+// Scope: channel:read:redemptions
+const TWITCH_CLIENT_ID = 'bt9iq3fqob2gxmr1li2jecy6bm0ppf';
+const TWITCH_REDIRECT_URI = window.location.href.split('?')[0].split('#')[0];
+const TWITCH_SCOPE = 'channel:read:redemptions';
 
-  if (data.action === 'pause') player.pauseVideo();
-  if (data.action === 'play') player.playVideo();
-  if (data.action === 'skip') markDoneAndNext();
-});
+let twitchToken = null;
+let twitchUserId = null;
+let twitchUserLogin = null;
+let eventSubWs = null;
+let wsSessionId = null;
+let reconnectTimer = null;
 
-let player = null;
-let ytReady = false;
-let currentKey = null;
+// ── LOG ──────────────────────────────────────────────────────────
+function log(msg, type = 'info') {
+  const box = document.getElementById('twitch-log');
+  const line = document.createElement('div');
+  line.className = 'log-' + type;
+  line.textContent = new Date().toLocaleTimeString('uk') + ' ' + msg;
+  box.appendChild(line);
+  box.scrollTop = box.scrollHeight;
+}
 
-const tag = document.createElement('script');
-tag.src = 'https://www.youtube.com/iframe_api';
-document.head.appendChild(tag);
-
-window.onYouTubeIframeAPIReady = function() {
-  ytReady = true;
-  player = new YT.Player('yt-player', {
-    height:'1', width:'1',
-    playerVars:{autoplay:1},
-    events:{
-      onStateChange: function(e) {
-        if (e.data === YT.PlayerState.ENDED) markDoneAndNext();
-      }
-    }
-  });
+// ── AUTH ─────────────────────────────────────────────────────────
+window.twitchLogin = function() {
+  if (twitchToken) { twitchDisconnect(); return; }
+  if (TWITCH_CLIENT_ID === 'YOUR_CLIENT_ID_HERE') {
+    alert('⚠️ Спочатку заміни TWITCH_CLIENT_ID в коді!');
+    return;
+  }
+  // Save current URL so we know this is a fresh login attempt
+  localStorage.setItem('twitch_login_pending', '1');
+  const url = `https://id.twitch.tv/oauth2/authorize?client_id=${TWITCH_CLIENT_ID}&redirect_uri=${encodeURIComponent(TWITCH_REDIRECT_URI)}&response_type=token&scope=${TWITCH_SCOPE}`;
+  window.location.href = url;
 };
 
-const playerDiv = document.createElement('div');
-playerDiv.id = 'yt-player';
-playerDiv.style.cssText = 'position:fixed;bottom:-10px;left:-10px;width:1px;height:1px;';
-document.body.appendChild(playerDiv);
+function twitchDisconnect() {
+  twitchToken = null; twitchUserId = null; twitchUserLogin = null;
+  localStorage.removeItem('twitch_token');
+  localStorage.removeItem('twitch_login_pending');
+  if (eventSubWs) { eventSubWs.close(); eventSubWs = null; }
+  setStatus('disconnected');
+  log('Відключено від Twitch', 'err');
+}
 
-let queue = [];
+// Parse token from URL hash after OAuth redirect
+function parseTokenFromHash() {
+  const hash = window.location.hash;
+  if (!hash || !hash.includes('access_token')) return null;
+  const params = new URLSearchParams(hash.replace(/^#/, ''));
+  const token = params.get('access_token');
+  if (!token) return null;
+  localStorage.setItem('twitch_token', token);
+  localStorage.removeItem('twitch_login_pending');
+  // Clean URL so token doesn't stay in address bar
+  history.replaceState(null, '', window.location.pathname);
+  return token;
+}
+
+async function initTwitch(token) {
+  twitchToken = token;
+  setStatus('connecting');
+  try {
+    const r = await fetch('https://api.twitch.tv/helix/users', {
+      headers: { 'Authorization': `Bearer ${token}`, 'Client-Id': TWITCH_CLIENT_ID }
+    });
+    if (!r.ok) throw new Error('token invalid');
+    const d = await r.json();
+    twitchUserId = d.data[0].id;
+    twitchUserLogin = d.data[0].login;
+    log(`✓ Авторизовано як ${twitchUserLogin}`, 'ok');
+    document.getElementById('twitch-info').textContent = `Підключено як ${twitchUserLogin}. Слухаю Channel Points...`;
+    document.getElementById('reward-setup').style.display = 'block';
+    connectEventSub();
+  } catch(e) {
+    log('❌ Помилка авторизації: ' + e.message, 'err');
+    log('Можливо токен протух — натисни "Підключити Twitch" знову', 'err');
+    localStorage.removeItem('twitch_token');
+    setStatus('disconnected');
+  }
+}
+
+// ── EVENTSUB WEBSOCKET ────────────────────────────────────────────
+function connectEventSub() {
+  if (eventSubWs) eventSubWs.close();
+  setStatus('connecting');
+  log('Підключаюсь до EventSub...', 'info');
+  eventSubWs = new WebSocket('wss://eventsub.wss.twitch.tv/ws');
+
+  eventSubWs.onopen = () => log('WebSocket відкрито', 'info');
+
+  eventSubWs.onmessage = async (e) => {
+    const msg = JSON.parse(e.data);
+    const type = msg.metadata?.message_type;
+
+    if (type === 'session_welcome') {
+      wsSessionId = msg.payload.session.id;
+      log('Сесія: ' + wsSessionId.slice(0,8) + '...', 'info');
+      await subscribeToRedemptions();
+    }
+
+    if (type === 'session_keepalive') { /* alive */ }
+
+    if (type === 'notification') {
+      const ev = msg.payload.event;
+      handleRedemption(ev);
+    }
+
+    if (type === 'session_reconnect') {
+      const url = msg.payload.session.reconnect_url;
+      log('Перепідключення...', 'info');
+      eventSubWs = new WebSocket(url);
+    }
+  };
+
+  eventSubWs.onerror = (e) => log('WS помилка', 'err');
+
+  eventSubWs.onclose = (e) => {
+    setStatus('disconnected');
+    log('WS закрито, повтор через 10с...', 'err');
+    if (twitchToken) reconnectTimer = setTimeout(connectEventSub, 10000);
+  };
+}
+
+async function subscribeToRedemptions() {
+  try {
+    const r = await fetch('https://api.twitch.tv/helix/eventsub/subscriptions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${twitchToken}`,
+        'Client-Id': TWITCH_CLIENT_ID,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        type: 'channel.channel_points_custom_reward_redemption.add',
+        version: '1',
+        condition: { broadcaster_user_id: twitchUserId },
+        transport: { method: 'websocket', session_id: wsSessionId }
+      })
+    });
+    if (!r.ok) {
+      const err = await r.json();
+      throw new Error(err.message || r.status);
+    }
+    setStatus('connected');
+    log('✓ Підписка на Channel Points активна!', 'ok');
+  } catch(e) {
+    log('Помилка підписки: ' + e.message, 'err');
+    setStatus('disconnected');
+  }
+}
+
+// ── HANDLE REDEMPTION ─────────────────────────────────────────────
+async function handleRedemption(ev) {
+  const rewardName = ev.reward?.title || '';
+  const input = (ev.user_input || '').trim();
+  const userName = ev.user_name || ev.user_login || 'Глядач';
+  const targetReward = document.getElementById('reward-name-input').value.trim();
+
+  log(`🎁 ${userName}: "${rewardName}" → "${input}"`, 'info');
+
+  // Filter only our reward
+  if (targetReward && rewardName.toLowerCase() !== targetReward.toLowerCase()) {
+    log(`Пропускаю (не та нагорода)`, 'info');
+    return;
+  }
+
+  const vid = extractVideoId(input);
+  if (!vid) {
+    log(`❌ Не знайдено YouTube посилання від ${userName}`, 'err');
+    return;
+  }
+
+  // Fetch YouTube metadata
+  let title = 'YouTube трек';
+  let channel = '';
+  try {
+    const r = await fetch(`https://www.youtube.com/oembed?url=https://youtube.com/watch?v=${vid}&format=json`);
+    if (r.ok) {
+      const d = await r.json();
+      title = d.title;
+      channel = d.author_name;
+    }
+  } catch {}
+
+  // Push to Firebase as approved (auto)
+  try {
+    await push(queueRef, {
+      id: vid,
+      title,
+      channel,
+      from: userName,
+      ts: Date.now(),
+      status: 'approved',
+      source: 'twitch_points'
+    });
+    log(`✅ Додано: "${title}" від ${userName}`, 'ok');
+  } catch(e) {
+    log('Firebase помилка: ' + e.message, 'err');
+  }
+}
+
+function extractVideoId(text) {
+  const m = text.match(/(?:v=|youtu\.be\/|embed\/)([A-Za-z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+
+// ── UI STATUS ─────────────────────────────────────────────────────
+function setStatus(state) {
+  const dot = document.getElementById('twitch-dot');
+  const label = document.getElementById('twitch-label');
+  const btn = document.getElementById('twitch-btn');
+  dot.className = 'twitch-dot ' + (state === 'connected' ? 'connected' : state === 'connecting' ? 'connecting' : '');
+  if (state === 'connected') {
+    label.textContent = `підключено (${twitchUserLogin || ''})`;
+    label.className = 'twitch-label connected';
+    btn.textContent = 'Відключити';
+    btn.className = 'twitch-btn disconnect';
+  } else if (state === 'connecting') {
+    label.textContent = 'підключення...';
+    label.className = 'twitch-label connecting';
+    btn.textContent = 'Підключення...';
+    btn.className = 'twitch-btn';
+    btn.disabled = true;
+  } else {
+    label.textContent = 'не підключено';
+    label.className = 'twitch-label';
+    btn.textContent = 'Підключити Twitch';
+    btn.className = 'twitch-btn';
+    btn.disabled = false;
+  }
+}
+
+// ── INIT ──────────────────────────────────────────────────────────
+(function() {
+  const hashToken = parseTokenFromHash();
+  if (hashToken) {
+    log('Токен отримано з URL, підключаюсь...', 'ok');
+    initTwitch(hashToken);
+    return;
+  }
+  const savedToken = localStorage.getItem('twitch_token');
+  if (savedToken) {
+    log('Токен знайдено в localStorage, підключаюсь...', 'info');
+    initTwitch(savedToken);
+    return;
+  }
+  if (localStorage.getItem('twitch_login_pending')) {
+    log('❌ Повернення після логіну але токен не знайдено. Перевір Redirect URI в Twitch Console.', 'err');
+    localStorage.removeItem('twitch_login_pending');
+  } else {
+    log('Очікую підключення до Twitch...', 'info');
+  }
+})();
+
+// ── FIREBASE / QUEUE ──────────────────────────────────────────────
+let allItems = [];
 
 onValue(queueRef, (snapshot) => {
   const data = snapshot.val();
-  if (!data) { queue = []; updateUI(); return; }
-  queue = Object.entries(data)
-    .map(([k,v]) => ({...v, key: k}))
-    .filter(v => v.status === 'approved' || v.status === 'playing')
-    .sort((a,b) => a.ts - b.ts);
-  updateUI();
-  tryPlay();
+  if (!data) { allItems = []; render(); return; }
+  allItems = Object.entries(data).map(([k,v]) => ({...v, key: k})).sort((a,b) => a.ts - b.ts);
+  render();
 });
 
-function tryPlay() {
-  if (!ytReady || !player || !player.loadVideoById) return;
-  const playing = queue.find(t => t.status === 'playing');
-  if (playing) {
-    if (playing.key !== currentKey) {
-      currentKey = playing.key;
-      player.loadVideoById(playing.id);
-    }
-    return;
+function render() {
+  const pending = allItems.filter(t => t.status === 'pending');
+  const approved = allItems.filter(t => t.status === 'approved' || t.status === 'playing');
+
+  document.getElementById('pending-badge').textContent = pending.length;
+  document.getElementById('queue-badge').textContent = approved.length;
+
+  const pendingList = document.getElementById('pending-list');
+  if (pending.length === 0) { pendingList.innerHTML = '<div class="empty">запитів немає</div>'; }
+  else {
+    pendingList.innerHTML = pending.map(t => `
+      <div class="req-item">
+        <div class="req-thumb"><img src="https://img.youtube.com/vi/${t.id}/default.jpg" alt=""></div>
+        <div class="req-info">
+          <div class="req-name">${t.title}</div>
+          <div class="req-from">від ${t.from}</div>
+        </div>
+        <div class="req-actions">
+          <button class="btn-approve" onclick="approveTrack('${t.key}')">✓</button>
+          <button class="btn-reject" onclick="reject('${t.key}')">✗</button>
+        </div>
+      </div>
+    `).join('');
   }
-  const next = queue.find(t => t.status === 'approved');
-  if (next) {
-    import("https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js").then(({ref: dbRef, update}) => {
-      const db2 = getDatabase();
-      update(dbRef(db2, `queue/${next.key}`), {status: 'playing'});
-    });
+
+  const queueList = document.getElementById('queue-list');
+  if (approved.length === 0) { queueList.innerHTML = '<div class="empty">черга порожня</div>'; }
+  else {
+    queueList.innerHTML = approved.map((t, i) => `
+      <div class="queue-item">
+        ${t.status === 'playing' ? '<span class="now-pill">grає</span>' : `<span class="q-num">${i}</span>`}
+        <div class="q-info">
+          <div class="q-name">${t.title} ${t.source === 'twitch_points' ? '<span class="twitch-pill">🟣 points</span>' : ''}</div>
+          <div class="q-from">від ${t.from}</div>
+        </div>
+        <button class="btn-del" onclick="reject('${t.key}')">✗</button>
+      </div>
+    `).join('');
   }
 }
 
-function markDoneAndNext() {
-  const playing = queue.find(t => t.status === 'playing');
-  if (!playing) return;
-  import("https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js").then(({ref: dbRef, remove}) => {
-    const db2 = getDatabase();
-    remove(dbRef(db2, `queue/${playing.key}`));
-    currentKey = null;
-  });
-}
+window.approveTrack = function(key) {
+  update(ref(db, `queue/${key}`), { status: 'approved' });
+};
 
-function updateUI() {
-  const playing = queue.find(t => t.status === 'playing');
-  const rest = queue.filter(t => t.status === 'approved');
-  const titleEl = document.getElementById('track-title');
-  const fromEl = document.getElementById('track-from');
-  const qRow = document.getElementById('queue-row');
-  if (playing) {
-    titleEl.textContent = playing.title;
-    fromEl.textContent = 'від ' + playing.from;
-    titleEl.className = playing.title.length > 30 ? 'track-text' : 'track-text short';
-  } else {
-    titleEl.textContent = 'немає треку';
-    titleEl.className = 'track-text short';
-    fromEl.textContent = '';
-  }
-  if (rest.length > 0) {
-    qRow.innerHTML = rest.slice(0,4).map(t => `<span class="q-pill">${t.title}</span>`).join('');
-  } else {
-    qRow.innerHTML = '';
-  }
-}
+window.reject = function(key) { remove(ref(db, `queue/${key}`)); };
 
-setTimeout(tryPlay, 2000);
+window.clearAll = function() {
+  if (!confirm('Очистити всю чергу?')) return;
+  allItems.forEach(t => remove(ref(db, `queue/${t.key}`)));
+};
+
+window.stopCurrentTrack = function() { set(ref(db, 'control'), { action: 'pause', ts: Date.now() }); };
+window.resumeCurrentTrack = function() { set(ref(db, 'control'), { action: 'play', ts: Date.now() }); };
+window.skipCurrent = function() { set(ref(db, 'control'), { action: 'skip', ts: Date.now() }); };
+
 </script>
 </body>
 </html>

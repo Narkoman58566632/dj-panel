@@ -315,7 +315,7 @@ async function handleRedemption(ev) {
     }
   } catch {}
 
-  // Push to Firebase as approved (auto)
+  // Push to Firebase as pending (manual approve)
   try {
     await push(queueRef, {
       id: vid,
@@ -323,7 +323,7 @@ async function handleRedemption(ev) {
       channel,
       from: userName,
       ts: Date.now(),
-      status: 'approved',
+      status: 'pending',
       source: 'twitch_points'
     });
     log(`✅ Додано: "${title}" від ${userName}`, 'ok');

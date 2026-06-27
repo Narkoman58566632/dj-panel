@@ -256,6 +256,32 @@ function connectEventSub() {
 
 async function subscribeToRedemptions() {
   try {
+    // First delete all existing subscriptions to avoid duplicates
+    const existing = await fetch('https://api.twitch.tv/helix/eventsub/subscriptions', {
+      headers: {
+        'Authorization': `Bearer ${twitchToken}`,
+        'Client-Id': TWITCH_CLIENT_ID
+      }
+    });
+    if (existing.ok) {
+      const data = await existing.json();
+      const subs = (data.data || []).filter(s =>
+        s.type === 'channel.channel_points_custom_reward_redemption.add' &&
+        s.condition?.broadcaster_user_id === twitchUserId
+      );
+      for (const sub of subs) {
+        await fetch(`https://api.twitch.tv/helix/eventsub/subscriptions?id=${sub.id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${twitchToken}`,
+            'Client-Id': TWITCH_CLIENT_ID
+          }
+        });
+      }
+      if (subs.length > 0) log(`Видалено ${subs.length} стару підписку`, 'info');
+    }
+
+    // Now create fresh subscription
     const r = await fetch('https://api.twitch.tv/helix/eventsub/subscriptions', {
       method: 'POST',
       headers: {

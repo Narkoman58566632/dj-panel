@@ -31,7 +31,7 @@ body{background:transparent;font-family:'Unbounded',sans-serif;padding:16px;over
 <body>
 <div class="widget hidden" id="widget">
   <div class="top-row">
-    <span class="now-label" id="w-now-label">&#9835; grає</span>
+    <span class="now-label" id="w-now-label">&#9835; грає</span>
     <div class="track-scroll"><span class="track-text short" id="track-title"></span></div>
   </div>
   <div class="from-text" id="track-from"></div>
@@ -55,11 +55,11 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// Получаем UID из параметров URL (?u=UID_СТРИМЕРА)
+// Отримуємо UID з параметрів URL (?u=UID_СТРИМЕРА)
 const urlParams = new URLSearchParams(window.location.search);
 const USER_UID = urlParams.get('u') || 'default';
 
-// Формируем динамические пути к Firebase на основе UID
+// Формуємо динамічні шляхи до Firebase
 const queueRef = ref(db, USER_UID !== 'default' ? `users/${USER_UID}/queue` : 'queue');
 const controlRef = ref(db, USER_UID !== 'default' ? `users/${USER_UID}/control` : 'control');
 const themeRef = ref(db, `users/${USER_UID}/widget_theme`);
@@ -80,7 +80,7 @@ function hideWidget() {
   }, 1500);
 }
 
-// Применение динамической темы из базы данных панели
+// Застосування динамічної теми
 onValue(themeRef, (snap) => {
   const t = snap.val();
   if (!t) return;
@@ -113,18 +113,20 @@ onValue(themeRef, (snap) => {
   `;
 });
 
+let player = null;
+let ytReady = false;
+let currentKey = null;
+
+// Слухаємо команди панелі керування
 onValue(controlRef, (snap) => {
   const data = snap.val();
-  if (!data || !player) return;
+  if (!data || !player || !ytReady) return;
+  
   if (data.action === 'pause') player.pauseVideo();
   if (data.action === 'play') player.playVideo();
   if (data.action === 'skip') markDoneAndNext();
   if (data.action === 'replay') player.seekTo(0);
 });
-
-let player = null;
-let ytReady = false;
-let currentKey = null;
 
 const tag = document.createElement('script');
 tag.src = 'https://www.youtube.com/iframe_api';
@@ -134,10 +136,26 @@ window.onYouTubeIframeAPIReady = function() {
   ytReady = true;
   player = new YT.Player('yt-player', {
     height:'1', width:'1',
-    playerVars:{autoplay:1},
+    playerVars: { 
+      autoplay: 1, 
+      controls: 0, 
+      mute: 1, // Обов'язково запускаємо без звуку, щоб обійти блокування Autoplay
+      origin: window.location.origin 
+    },
     events:{
+      onReady: function(e) {
+        // Як тільки плеєр готовий, намагаємося запустити чергу
+        tryPlay();
+      },
       onStateChange: function(e) {
-        if (e.data === YT.PlayerState.ENDED) markDoneAndNext();
+        // Коли відео починає грати (YT.PlayerState.PLAYING = 1), повертаємо йому звук
+        if (e.data === YT.PlayerState.PLAYING) {
+          player.unMute();
+          player.setVolume(100);
+        }
+        if (e.data === YT.PlayerState.ENDED) {
+          markDoneAndNext();
+        }
       }
     }
   });
@@ -145,7 +163,7 @@ window.onYouTubeIframeAPIReady = function() {
 
 const playerDiv = document.createElement('div');
 playerDiv.id = 'yt-player';
-playerDiv.style.cssText = 'position:fixed;bottom:-10px;left:-10px;width:1px;height:1px;';
+playerDiv.style.cssText = 'position:fixed;bottom:-10px;left:-10px;width:1px;height:1px;opacity:0;pointer-events:none;';
 document.body.appendChild(playerDiv);
 
 let queue = [];
@@ -163,6 +181,7 @@ onValue(queueRef, (snapshot) => {
 
 function tryPlay() {
   if (!ytReady || !player || !player.loadVideoById) return;
+  
   const playing = queue.find(t => t.status === 'playing');
   if (playing) {
     if (playing.key !== currentKey) {
@@ -171,6 +190,7 @@ function tryPlay() {
     }
     return;
   }
+  
   const next = queue.find(t => t.status === 'approved');
   if (next) {
     import("https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js").then(({ref: dbRef, update}) => {

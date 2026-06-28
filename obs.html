@@ -29,7 +29,7 @@ body{background:transparent;font-family:'Unbounded',sans-serif;padding:16px;over
 
 <div class="widget hidden" id="widget">
   <div class="top-row">
-    <span class="now-label">&#9835; grає</span>
+    <span class="now-label" id="now-label">&#9835; grає</span>
     <div class="track-scroll"><span class="track-text short" id="track-title"></span></div>
   </div>
   <div class="from-text" id="track-from"></div>
@@ -51,19 +51,59 @@ const firebaseConfig = {
   measurementId: "G-70G2MEMNGW"
 };
 
-// Get user ID from URL ?u=UID
 const uid = new URLSearchParams(window.location.search).get('u');
 if (!uid) {
-  document.body.innerHTML = '<div class="error">❌ Немає параметру ?u= в URL. Скопіюй посилання з DJ панелі.</div>';
+  document.body.innerHTML = '<div class="error">❌ No ?u= parameter in URL. Copy the link from DJ panel.</div>';
   throw new Error('no uid');
 }
 
 const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+const db  = getDatabase(app);
 
 const queueRef   = ref(db, `users/${uid}/queue`);
 const controlRef = ref(db, `users/${uid}/control`);
 const themeRef   = ref(db, `users/${uid}/widget_theme`);
+const langRef    = ref(db, `users/${uid}/lang`);
+
+// ── i18n ──────────────────────────────────────────────────────────
+const STRINGS = {
+  uk: {
+    playing: '♫ grає',
+    from: 'від',
+  },
+  ru: {
+    playing: '♫ играет',
+    from: 'от',
+  },
+  en: {
+    playing: '♫ playing',
+    from: 'by',
+  }
+};
+
+let lang = 'uk';
+let currentPlaying = null; // cache to re-render on lang change
+
+function S(key) {
+  return (STRINGS[lang] || STRINGS.uk)[key];
+}
+
+function applyLang() {
+  document.getElementById('now-label').textContent = S('playing');
+  // Re-render from text if something is playing
+  if (currentPlaying) {
+    document.getElementById('track-from').textContent = S('from') + ' ' + currentPlaying.from;
+  }
+}
+
+// Listen for lang changes from panel (saved to Firebase)
+onValue(langRef, (snap) => {
+  const val = snap.val();
+  if (val && STRINGS[val]) {
+    lang = val;
+    applyLang();
+  }
+});
 
 // ── THEME ─────────────────────────────────────────────────────────
 onValue(themeRef, (snap) => {
@@ -139,7 +179,6 @@ function tryPlay() {
     }
     return;
   }
-  // No playing track — take next approved
   const next = queue.find(t => t.status === 'approved');
   if (next) {
     import("https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js").then(({ref:dbRef, update}) => {
@@ -149,18 +188,27 @@ function tryPlay() {
 }
 
 function markDoneAndNext() {
-  // Use currentKey directly — don't search queue (it may be stale)
   if (!currentKey) return;
   const keyToRemove = currentKey;
-  currentKey = null; // Reset immediately to prevent double-trigger
+  currentKey = null;
   import("https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js").then(({ref:dbRef, remove}) => {
     remove(dbRef(db, `users/${uid}/queue/${keyToRemove}`));
-    // tryPlay will be called automatically by onValue after removal
   });
 }
 
-function showWidget() { clearTimeout(hideTimer); const w=document.getElementById('widget'); w.classList.remove('hidden'); w.classList.add('visible'); }
-function hideWidget() { hideTimer = setTimeout(()=>{ const w=document.getElementById('widget'); w.classList.remove('visible'); w.classList.add('hidden'); }, 1500); }
+function showWidget() {
+  clearTimeout(hideTimer);
+  const w = document.getElementById('widget');
+  w.classList.remove('hidden');
+  w.classList.add('visible');
+}
+function hideWidget() {
+  hideTimer = setTimeout(() => {
+    const w = document.getElementById('widget');
+    w.classList.remove('visible');
+    w.classList.add('hidden');
+  }, 1500);
+}
 
 function updateUI() {
   const playing = queue.find(t => t.status === 'playing');
@@ -172,19 +220,24 @@ function updateUI() {
   if (playing || rest.length > 0) {
     showWidget();
     if (playing) {
+      currentPlaying = playing;
       titleEl.textContent = playing.title;
-      fromEl.textContent  = 'від ' + playing.from;
+      fromEl.textContent  = S('from') + ' ' + playing.from;
       titleEl.className   = playing.title.length > 30 ? 'track-text' : 'track-text short';
     } else {
-      titleEl.textContent = ''; fromEl.textContent = '';
+      currentPlaying = null;
+      titleEl.textContent = '';
+      fromEl.textContent  = '';
     }
   } else {
+    currentPlaying = null;
     hideWidget();
-    titleEl.textContent = ''; fromEl.textContent = '';
+    titleEl.textContent = '';
+    fromEl.textContent  = '';
   }
 
   qRow.innerHTML = rest.length > 0
-    ? rest.slice(0,4).map(t=>`<span class="q-pill">${t.title}</span>`).join('')
+    ? rest.slice(0, 4).map(t => `<span class="q-pill">${t.title}</span>`).join('')
     : '';
 }
 

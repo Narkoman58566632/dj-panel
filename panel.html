@@ -127,6 +127,15 @@ body{background:var(--bg);min-height:100vh;font-family:'Inter',sans-serif;paddin
 .loading-screen .logo span{color:#6441a5;}
 .loading-screen p{font-size:12px;color:#555;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+.playback-status{display:flex;align-items:center;gap:10px;margin-top:14px;padding:10px 14px;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;}
+.ps-dot{width:10px;height:10px;border-radius:50%;background:var(--border2);flex-shrink:0;transition:background 0.3s;}
+.ps-dot.playing{background:#00e676;box-shadow:0 0 8px #00e676aa;animation:pulse 1.5s ease-in-out infinite;}
+.ps-dot.paused{background:#ffaa00;}
+.ps-dot.stopped{background:var(--border2);}
+.ps-label{font-size:12px;color:var(--text2);font-family:'Unbounded',sans-serif;}
+.ps-label.playing{color:#00e676;}
+.ps-label.paused{color:#ffaa00;}
+.ps-track{font-size:11px;color:var(--text2);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-left:4px;}
 .pl-add-row{display:flex;gap:8px;margin-bottom:12px;}
 .pl-url-input{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;color:var(--text3);font-size:13px;font-family:'Inter',sans-serif;outline:none;}
 .pl-url-input:focus{border-color:var(--green-border);}
@@ -203,6 +212,11 @@ body{background:var(--bg);min-height:100vh;font-family:'Inter',sans-serif;paddin
         <button class="music-btn" onclick="skipCurrent()"><span class="icon">⏭️</span><span id="b-skip">Пропустити</span></button>
         <button class="music-btn" onclick="replayCurrentTrack()"><span class="icon">🔄</span><span id="b-replay">Спочатку</span></button>
         <button class="music-btn danger" onclick="clearAll()"><span class="icon">🗑️</span><span id="b-clear">Очистити все</span></button>
+      </div>
+      <div class="playback-status" id="playback-status">
+        <div class="ps-dot stopped" id="ps-dot"></div>
+        <span class="ps-label stopped" id="ps-label">—</span>
+        <span class="ps-track" id="ps-track"></span>
       </div>
     </div>
     <div class="section">
@@ -347,7 +361,7 @@ const LANGUAGES = {
   uk: {
     loading: "Завантаження...", subtitle_suffix: " — керування музикою", obs_btn: "🎬 OBS лінк", logout: "Вийти",
     tab_queue: "🎵 Черга", tab_playlists: "📂 Плейлисти", tab_twitch: "🟣 Twitch", tab_settings: "⚙️ Вигляд",
-    s_playback: "відтворення", b_play: "Відтворити", b_pause: "Пауза", b_skip: "Пропустити", b_replay: "Спочатку", b_clear: "Очистити все",
+    s_playback: "відтворення", ps_playing: "Грає", ps_paused: "Пауза", ps_stopped: "Зупинено", b_play: "Відтворити", b_pause: "Пауза", b_skip: "Пропустити", b_replay: "Спочатку", b_clear: "Очистити все",
     s_queue_title: "черга треків", empty_queue: "черга порожня", playing_now: "grає", from_user: "від", confirm_clear: "Очистити всю чергу?",
     s_my_playlists: "📂 мої плейлисти", lbl_fallback: "Коли черга порожня:", mode_off: "Нічого", mode_order: "По порядку", mode_shuffle: "Рандом 🔀",
     pl_placeholder: "Посилання на YouTube плейлист...", pl_add: "+ Додати", empty_playlists: "плейлистів немає", pl_tracks: "треків",
@@ -375,7 +389,7 @@ const LANGUAGES = {
   ru: {
     loading: "Загрузка...", subtitle_suffix: " — управление музыкой", obs_btn: "🎬 OBS линк", logout: "Выйти",
     tab_queue: "🎵 Очередь", tab_playlists: "📂 Плейлисты", tab_twitch: "🟣 Twitch", tab_settings: "⚙️ Вид панели",
-    s_playback: "воспроизведение", b_play: "Включить", b_pause: "Пауза", b_skip: "Пропустить", b_replay: "Сначала", b_clear: "Очистить всё",
+    s_playback: "воспроизведение", ps_playing: "Играет", ps_paused: "Пауза", ps_stopped: "Остановлено", b_play: "Включить", b_pause: "Пауза", b_skip: "Пропустить", b_replay: "Сначала", b_clear: "Очистить всё",
     s_queue_title: "очередь треков", empty_queue: "очередь пуста", playing_now: "играет", from_user: "от", confirm_clear: "Очистить всю очередь?",
     s_my_playlists: "📂 мои плейлисты", lbl_fallback: "Если очередь пуста:", mode_off: "Ничего", mode_order: "По порядку", mode_shuffle: "Рандом 🔀",
     pl_placeholder: "Ссылка на YouTube плейлист...", pl_add: "+ Добавить", empty_playlists: "плейлистов нет", pl_tracks: "треков",
@@ -403,7 +417,7 @@ const LANGUAGES = {
   en: {
     loading: "Loading...", subtitle_suffix: " — music control", obs_btn: "🎬 OBS Link", logout: "Logout",
     tab_queue: "🎵 Queue", tab_playlists: "📂 Playlists", tab_twitch: "🟣 Twitch", tab_settings: "⚙️ Settings",
-    s_playback: "playback control", b_play: "Play", b_pause: "Pause", b_skip: "Skip", b_replay: "Replay", b_clear: "Clear All",
+    s_playback: "playback control", ps_playing: "Playing", ps_paused: "Paused", ps_stopped: "Stopped", b_play: "Play", b_pause: "Pause", b_skip: "Skip", b_replay: "Replay", b_clear: "Clear All",
     s_queue_title: "tracks queue", empty_queue: "queue is empty", playing_now: "playing", from_user: "by", confirm_clear: "Clear the entire queue?",
     s_my_playlists: "📂 my playlists", lbl_fallback: "When queue is empty:", mode_off: "Nothing", mode_order: "In Order", mode_shuffle: "Shuffle 🔀",
     pl_placeholder: "YouTube playlist link...", pl_add: "+ Add", empty_playlists: "no playlists", pl_tracks: "tracks",
@@ -438,6 +452,8 @@ window.changeLanguage = function(lang) {
   applyLocalization();
   render();
   renderMyPlaylists();
+  // Save lang to Firebase so OBS widget can sync
+  if (uid) { set(langRef(), lang).catch(()=>{}); }
 };
 
 function applyLocalization() {
@@ -507,6 +523,8 @@ function wtRef()  { return ref(db, `users/${uid}/widget_theme`); }
 function plRef()  { return ref(db, `users/${uid}/playlists`); }
 function plCfgRef() { return ref(db, `users/${uid}/playlist_config`); }
 function rewardCfgRef() { return ref(db, `users/${uid}/reward_config`); }
+function langRef()      { return ref(db, `users/${uid}/lang`); }
+function pbRef()       { return ref(db, `users/${uid}/playback_state`); }
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
@@ -532,7 +550,10 @@ onAuthStateChanged(auth, async (user) => {
   document.getElementById('app').style.display = 'block';
   applyLocalization();
   document.getElementById('user-subtitle').textContent = userDisplayName + LANGUAGES[currentLang].subtitle_suffix;
+  // Sync current lang to Firebase for OBS widget
+  set(langRef(), currentLang).catch(()=>{});
   initQueue();
+  initPlaybackState();
   loadColors();
   loadWidgetTheme();
   initPlaylists();
@@ -905,6 +926,33 @@ setTimeout(()=>{
 },500);
 
 // ── QUEUE ─────────────────────────────────────────────────────────
+function initPlaybackState(){
+  onValue(pbRef(),(snap)=>{
+    const data = snap.val();
+    const state = data?.state || 'stopped';
+    const dot   = document.getElementById('ps-dot');
+    const label = document.getElementById('ps-label');
+    const track = document.getElementById('ps-track');
+    if (!dot) return;
+    const t = LANGUAGES[currentLang];
+    dot.className   = 'ps-dot ' + state;
+    label.className = 'ps-label ' + state;
+    if (state === 'playing') {
+      label.textContent = '▶ ' + (t.ps_playing || 'Playing');
+      // Find currently playing track name
+      const playing = allItems.find(i=>i.status==='playing');
+      if (track) track.textContent = playing ? playing.title : '';
+    } else if (state === 'paused') {
+      label.textContent = '⏸ ' + (t.ps_paused || 'Paused');
+      const playing = allItems.find(i=>i.status==='playing');
+      if (track) track.textContent = playing ? playing.title : '';
+    } else {
+      label.textContent = '⏹ ' + (t.ps_stopped || 'Stopped');
+      if (track) track.textContent = '';
+    }
+  });
+}
+
 function initQueue(){
   onValue(qRef(),(snapshot)=>{
     const data=snapshot.val();
@@ -912,6 +960,7 @@ function initQueue(){
     allItems=Object.entries(data).map(([k,v])=>({...v,key:k})).sort((a,b)=>a.ts-b.ts);
     render();
     checkFallback(allItems);
+    syncPlaybackStateFromQueue();
   });
 }
 
@@ -946,12 +995,26 @@ function render(){
     </div>`).join('');
 }
 
+// Auto-sync playback_state when queue changes
+function syncPlaybackStateFromQueue() {
+  const playing = allItems.find(i => i.status === 'playing');
+  if (playing) {
+    // Only set to playing if not already paused by user
+    get(pbRef()).then(snap => {
+      const cur = snap.val()?.state;
+      if (cur !== 'paused') set(pbRef(), {state:'playing', ts:Date.now()}).catch(()=>{});
+    });
+  } else if (allItems.filter(i=>i.status==='approved').length === 0) {
+    set(pbRef(), {state:'stopped', ts:Date.now()}).catch(()=>{});
+  }
+}
+
 window.reject=k=>remove(ref(db,`users/${uid}/queue/${k}`));
 window.clearAll=()=>{if(!confirm(LANGUAGES[currentLang].confirm_clear))return;allItems.forEach(t=>remove(ref(db,`users/${uid}/queue/${t.key}`)));};
-window.stopCurrentTrack=()=>set(ctlRef(),{action:'pause',ts:Date.now()});
-window.resumeCurrentTrack=()=>set(ctlRef(),{action:'play',ts:Date.now()});
-window.skipCurrent=()=>set(ctlRef(),{action:'skip',ts:Date.now()});
-window.replayCurrentTrack=()=>set(ctlRef(),{action:'replay',ts:Date.now()});
+window.stopCurrentTrack=()=>{set(ctlRef(),{action:'pause',ts:Date.now()});set(pbRef(),{state:'paused',ts:Date.now()});};
+window.resumeCurrentTrack=()=>{set(ctlRef(),{action:'play',ts:Date.now()});set(pbRef(),{state:'playing',ts:Date.now()});};
+window.skipCurrent=()=>{set(ctlRef(),{action:'skip',ts:Date.now()});};
+window.replayCurrentTrack=()=>{set(ctlRef(),{action:'replay',ts:Date.now()});set(pbRef(),{state:'playing',ts:Date.now()});};
 
 window.switchTab=function(name){
   const names=['queue','playlists','twitch','settings'];

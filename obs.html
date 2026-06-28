@@ -2,45 +2,136 @@
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
-<title>OBS Widget</title>
-<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700&display=swap" rel="stylesheet">
-<style id="dynamic-styles">
-*{box-sizing:border-box;margin:0;padding:0;}
-body{background:transparent;font-family:'Unbounded',sans-serif;padding:16px;overflow:hidden;}
-@keyframes scroll{0%{transform:translateX(100%);}100%{transform:translateX(-100%);}}
-@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.6;}}
-@keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
-@keyframes fadeOut{from{opacity:1;transform:translateY(0);}to{opacity:0;transform:translateY(6px);}}
-.widget{
-  background:rgba(20,0,0,0.85);border:1px solid #c0392b;border-radius:12px;
-  padding:10px 16px;min-width:320px;max-width:480px;backdrop-filter:blur(4px);
-  transition:opacity 0.5s ease, transform 0.5s ease;
+<title>StreamDJ — OBS Widget</title>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700&family=Inter:wght@500;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: transparent;
+  overflow: hidden;
+  font-family: 'Inter', sans-serif;
+  width: 480px;
+  height: 120px;
 }
-.widget.hidden{opacity:0;transform:translateY(8px);pointer-events:none;}
-.widget.visible{opacity:1;transform:translateY(0);animation:fadeIn 0.5s ease;}
-.top-row{display:flex;align-items:center;gap:10px;overflow:hidden;}
-.now-label{font-size:9px;color:#ff6060;text-transform:uppercase;letter-spacing:0.1em;white-space:nowrap;animation:pulse 1.5s ease-in-out infinite;}
-.track-scroll{flex:1;overflow:hidden;position:relative;}
-.track-text{font-size:13px;color:#fff;white-space:nowrap;display:inline-block;animation:scroll 12s linear infinite;}
-.track-text.short{animation:none;}
-.from-text{font-size:10px;color:#7a3535;margin-top:4px;}
-.queue-row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
-.q-pill{font-size:10px;color:#c08080;background:#2a0808;border:1px solid #3d1010;border-radius:99px;padding:2px 8px;white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis;}
+.widget-container {
+  width: 460px;
+  height: 100px;
+  margin: 10px;
+  background: var(--w-bg, #140000);
+  border: 2px solid var(--w-border, #c0392b);
+  border-radius: 16px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.5s ease;
+}
+.widget-container.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+.thumb {
+  width: 76px;
+  height: 76px;
+  border-radius: 10px;
+  background: #000;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.track-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.status-label {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 10px;
+  color: var(--w-label, #ff6060);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
+}
+.marquee-box {
+  width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  position: relative;
+}
+.track-title {
+  display: inline-block;
+  font-size: var(--w-fontsize, 13px);
+  font-weight: 700;
+  color: var(--w-title, #ffffff);
+}
+.marquee-box.scroll .track-title {
+  animation: marquee var(--w-scroll, 12s) linear infinite;
+}
+@keyframes marquee {
+  0% { transform: translate3d(0, 0, 0); }
+  10% { transform: translate3d(0, 0, 0); }
+  90% { transform: translate3d(-50%, 0, 0); }
+  100% { transform: translate3d(-50%, 0, 0); }
+}
+.track-author {
+  font-size: calc(var(--w-fontsize, 13px) - 2px);
+  color: var(--w-from, #7a3535);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.queue-pill {
+  position: absolute;
+  top: -10px;
+  right: 15px;
+  background: var(--w-border, #c0392b);
+  color: var(--w-pill, #c08080);
+  font-family: 'Unbounded', sans-serif;
+  font-size: 9px;
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-weight: 700;
+  border: 2px solid var(--w-bg, #140000);
+}
+#player {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
 </style>
 </head>
 <body>
-<div class="widget hidden" id="widget">
-  <div class="top-row">
-    <span class="now-label" id="w-now-label">&#9835; grає</span>
-    <div class="track-scroll"><span class="track-text short" id="track-title"></span></div>
+
+<div id="player"></div>
+
+<div class="widget-container" id="widget">
+  <div class="queue-pill" id="q-count">ЧЕРГА: 0</div>
+  <div class="thumb"><img id="t-img" src="" alt=""></div>
+  <div class="track-info">
+    <div class="status-label" id="t-status">ЗАРАЗ ГРАЄ</div>
+    <div class="marquee-box" id="m-box">
+      <span class="track-title" id="t-title">Завантаження...</span>
+    </div>
+    <div class="track-author" id="t-from">від стрімера</div>
   </div>
-  <div class="from-text" id="track-from"></div>
-  <div class="queue-row" id="queue-row"></div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getDatabase, ref, onValue, update, remove, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyD77vyKpxE-PDJhk4aS8N3_SBAIIwoXIKE",
@@ -55,170 +146,186 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// Получаем UID из параметров URL (?u=UID_СТРИМЕРА)
+// Получаем UID стримера из URL (?u=UID)
 const urlParams = new URLSearchParams(window.location.search);
-const USER_UID = urlParams.get('u') || 'default';
+const uid = urlParams.get('u');
 
-// Формируем динамические пути к Firebase на основе UID
-const queueRef = ref(db, USER_UID !== 'default' ? `users/${USER_UID}/queue` : 'queue');
-const controlRef = ref(db, USER_UID !== 'default' ? `users/${USER_UID}/control` : 'control');
-const themeRef = ref(db, `users/${USER_UID}/widget_theme`);
-
-const widget = document.getElementById('widget');
-let hideTimer = null;
-
-function showWidget() {
-  clearTimeout(hideTimer);
-  widget.classList.remove('hidden');
-  widget.classList.add('visible');
+if (!uid) {
+  document.getElementById('t-title').textContent = "Помилка: немає UID в лінку OBS";
+} else {
+  initWidget();
 }
-
-function hideWidget() {
-  hideTimer = setTimeout(() => {
-    widget.classList.remove('visible');
-    widget.classList.add('hidden');
-  }, 1500);
-}
-
-// Применение динамической темы из базы данных панели
-onValue(themeRef, (snap) => {
-  const t = snap.val();
-  if (!t) return;
-  
-  const styleEl = document.getElementById('dynamic-styles');
-  styleEl.innerHTML = `
-    *{box-sizing:border-box;margin:0;padding:0;}
-    body{background:transparent;font-family:'Unbounded',sans-serif;padding:16px;overflow:hidden;}
-    @keyframes scroll{0%{transform:translateX(100%);}100%{transform:translateX(-100%);}}
-    @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.6;}}
-    @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
-    @keyframes fadeOut{from{opacity:1;transform:translateY(0);}to{opacity:0;transform:translateY(6px);}}
-    .widget{
-      background:${t.bg || 'rgba(20,0,0,0.85)'};
-      border:1px solid ${t.border || '#c0392b'};
-      border-radius:12px;
-      padding:10px 16px;min-width:320px;max-width:480px;backdrop-filter:blur(4px);
-      transition:opacity 0.5s ease, transform 0.5s ease;
-    }
-    .widget.hidden{opacity:0;transform:translateY(8px);pointer-events:none;}
-    .widget.visible{opacity:1;transform:translateY(0);animation:fadeIn 0.5s ease;}
-    .top-row{display:flex;align-items:center;gap:10px;overflow:hidden;}
-    .now-label{font-size:9px;color:${t.label || '#ff6060'};text-transform:uppercase;letter-spacing:0.1em;white-space:nowrap;animation:pulse 1.5s ease-in-out infinite;}
-    .track-scroll{flex:1;overflow:hidden;position:relative;}
-    .track-text{font-size:${t.fontsize || 13}px;color:${t.title || '#fff'};white-space:nowrap;display:inline-block;animation:scroll ${t.scroll || 12}s linear infinite;}
-    .track-text.short{animation:none;}
-    .from-text{font-size:10px;color:${t.from || '#7a3535'};margin-top:4px;}
-    .queue-row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
-    .q-pill{font-size:10px;color:${t.pill || '#c08080'};background:rgba(0,0,0,0.2);border:1px solid ${t.border || '#3d1010'};border-radius:99px;padding:2px 8px;white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis;}
-  `;
-});
-
-onValue(controlRef, (snap) => {
-  const data = snap.val();
-  if (!data || !player) return;
-  if (data.action === 'pause') player.pauseVideo();
-  if (data.action === 'play') player.playVideo();
-  if (data.action === 'skip') markDoneAndNext();
-  if (data.action === 'replay') player.seekTo(0);
-});
 
 let player = null;
-let ytReady = false;
-let currentKey = null;
+let currentTrack = null;
+let approvedTracks = [];
+let isPlayerReady = false;
 
+// Загрузка API YouTube плеера
 const tag = document.createElement('script');
-tag.src = 'https://www.youtube.com/iframe_api';
-document.head.appendChild(tag);
+tag.src = "https://www.youtube.com/iframe_api";
+const firstScriptTag = document.getElementsByTagName('script')[0];
+firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
 window.onYouTubeIframeAPIReady = function() {
-  ytReady = true;
-  player = new YT.Player('yt-player', {
-    height:'1', width:'1',
-    playerVars:{autoplay:1},
-    events:{
-      onStateChange: function(e) {
-        if (e.data === YT.PlayerState.ENDED) markDoneAndNext();
-      }
+  player = new YT.Player('player', {
+    height: '1',
+    width: '1',
+    videoId: '',
+    playerVars: {
+      'autoplay': 0,
+      'controls': 0,
+      'disablekb': 1,
+      'fs': 0,
+      'rel': 0,
+      'modestbranding': 1
+    },
+    events: {
+      'onReady': onPlayerReady,
+      'onStateChange': onPlayerStateChange
     }
   });
 };
 
-const playerDiv = document.createElement('div');
-playerDiv.id = 'yt-player';
-playerDiv.style.cssText = 'position:fixed;bottom:-10px;left:-10px;width:1px;height:1px;';
-document.body.appendChild(playerDiv);
+function onPlayerReady(event) {
+  isPlayerReady = true;
+  checkQueueLogic();
+}
 
-let queue = [];
-
-onValue(queueRef, (snapshot) => {
-  const data = snapshot.val();
-  if (!data) { queue = []; updateUI(); return; }
-  queue = Object.entries(data)
-    .map(([k,v]) => ({...v, key: k}))
-    .filter(v => v.status === 'approved' || v.status === 'playing')
-    .sort((a,b) => a.ts - b.ts);
-  updateUI();
-  tryPlay();
-});
-
-function tryPlay() {
-  if (!ytReady || !player || !player.loadVideoById) return;
-  const playing = queue.find(t => t.status === 'playing');
-  if (playing) {
-    if (playing.key !== currentKey) {
-      currentKey = playing.key;
-      player.loadVideoById(playing.id);
-    }
-    return;
-  }
-  const next = queue.find(t => t.status === 'approved');
-  if (next) {
-    import("https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js").then(({ref: dbRef, update}) => {
-      const targetPath = USER_UID !== 'default' ? `users/${USER_UID}/queue/${next.key}` : `queue/${next.key}`;
-      update(dbRef(getDatabase(), targetPath), {status: 'playing'});
-    });
+// Отслеживание состояния проигрывания в YouTube
+function onPlayerStateChange(event) {
+  // YT.PlayerState.ENDED = 0 (Трек завершился)
+  if (event.data === YT.PlayerState.ENDED) {
+    nextTrack();
   }
 }
 
-function markDoneAndNext() {
-  const playing = queue.find(t => t.status === 'playing');
-  if (!playing) return;
-  import("https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js").then(({ref: dbRef, remove}) => {
-    const targetPath = USER_UID !== 'default' ? `users/${USER_UID}/queue/${playing.key}` : `queue/${playing.key}`;
-    remove(dbRef(getDatabase(), targetPath));
-    currentKey = null;
+function initWidget() {
+  // 1. Слушаем кастомную тему виджета из базы
+  onValue(ref(db, `users/${uid}/widget_theme`), (snap) => {
+    if (snap.exists()) {
+      const t = snap.val();
+      const root = document.documentElement;
+      if(t.bg) root.style.setProperty('--w-bg', t.bg);
+      if(t.border) root.style.setProperty('--w-border', t.border);
+      if(t.title) root.style.setProperty('--w-title', t.title);
+      if(t.from) root.style.setProperty('--w-from', t.from);
+      if(t.label) root.style.setProperty('--w-label', t.label);
+      if(t.pill) root.style.setProperty('--w-pill', t.pill);
+      if(t.fontsize) root.style.setProperty('--w-fontsize', t.fontsize + 'px');
+      if(t.scroll) root.style.setProperty('--w-scroll', t.scroll + 's');
+    }
+  });
+
+  // 2. Слушаем очередь треков
+  onValue(ref(db, `users/${uid}/queue`), (snap) => {
+    const data = snap.val();
+    if (!data) {
+      approvedTracks = [];
+      document.getElementById('q-count').textContent = "ЧЕРГА: 0";
+      if (currentTrack) {
+        stopAndHide();
+      }
+      return;
+    }
+
+    // Собираем только одобренные к проигрыванию треки
+    const all = Object.entries(data).map(([k,v]) => ({...v, key:k})).sort((a,b) => a.ts - b.ts);
+    approvedTracks = all.filter(t => t.status === 'approved' || t.status === 'playing');
+    
+    document.getElementById('q-count').textContent = `ЧЕРГА: ${approvedTracks.length}`;
+
+    checkQueueLogic();
+  });
+
+  // 3. Слушаем кнопки управления из панели ("Пауза", "Пропустить", и т.д.)
+  onValue(ref(db, `users/${uid}/control`), (snap) => {
+    if (!snap.exists() || !player || !isPlayerReady) return;
+    const ctrl = snap.val();
+    
+    // Проверяем, чтобы команда была свежей (не старой)
+    if (Date.now() - ctrl.ts > 5000) return; 
+
+    if (ctrl.action === 'pause') {
+      player.pauseVideo();
+    } else if (ctrl.action === 'play') {
+      if (currentTrack) player.playVideo();
+    } else if (ctrl.action === 'skip') {
+      nextTrack();
+    } else if (ctrl.action === 'replay') {
+      if (currentTrack) player.seekTo(0);
+    }
   });
 }
 
-function updateUI() {
-  const playing = queue.find(t => t.status === 'playing');
-  const rest = queue.filter(t => t.status === 'approved');
-  const titleEl = document.getElementById('track-title');
-  const fromEl = document.getElementById('track-from');
-  const qRow = document.getElementById('queue-row');
+// Основная логика выбора трека
+function checkQueueLogic() {
+  if (!isPlayerReady || approvedTracks.length === 0) return;
 
-  if (playing) {
-    showWidget();
-    titleEl.textContent = playing.title;
-    fromEl.textContent = 'від ' + playing.from;
-    titleEl.className = playing.title.length > 30 ? 'track-text' : 'track-text short';
-  } else if (rest.length > 0) {
-    showWidget();
-    titleEl.textContent = '';
-    fromEl.textContent = '';
-    titleEl.className = 'track-text short';
+  // Ищем трек, который уже имеет статус 'playing'
+  let playingNow = approvedTracks.find(t => t.status === 'playing');
+
+  // Если такого нет, берем самый первый 'approved' трек и запускаем его
+  if (!playingNow) {
+    playingNow = approvedTracks[0];
+    currentTrack = playingNow;
+    
+    // Сразу обновляем его статус в Firebase на 'playing', чтобы панель его увидела!
+    update(ref(db, `users/${uid}/queue/${playingNow.key}`), { status: 'playing' });
+    
+    playTrack(playingNow);
   } else {
-    hideWidget();
-    titleEl.textContent = '';
-    fromEl.textContent = '';
+    // Если трек со статусом 'playing' сменился (например, первый удалили вручную)
+    if (!currentTrack || currentTrack.key !== playingNow.key) {
+      currentTrack = playingNow;
+      playTrack(playingNow);
+    }
   }
-
-  qRow.innerHTML = rest.length > 0
-    ? rest.slice(0,4).map(t => `<span class="q-pill">${t.title}</span>`).join('')
-    : '';
 }
 
-setTimeout(tryPlay, 2000);
+function playTrack(track) {
+  if (!player || !isPlayerReady) return;
+  
+  player.loadVideoById(track.id);
+  player.playVideo();
+
+  // Визуальное оформление виджета
+  document.getElementById('t-img').src = `https://img.youtube.com/vi/${track.id}/mqdefault.jpg`;
+  
+  const titleEl = document.getElementById('t-title');
+  titleEl.textContent = track.title;
+  document.getElementById('t-from').textContent = `від: ${track.from}`;
+  
+  document.getElementById('widget').classList.add('active');
+
+  // Логика бегущей строки (marquee)
+  const mBox = document.getElementById('m-box');
+  mBox.classList.remove('scroll');
+  
+  setTimeout(() => {
+    if (titleEl.offsetWidth > mBox.offsetWidth) {
+      // Клонируем текст для бесшовного скролла
+      titleEl.innerHTML = `${track.title} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ${track.title} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`;
+      mBox.classList.add('scroll');
+    } else {
+      titleEl.textContent = track.title;
+    }
+  }, 200);
+}
+
+function nextTrack() {
+  if (currentTrack) {
+    // Удаляем завершенный/пропущенный трек из Firebase
+    remove(ref(db, `users/${uid}/queue/${currentTrack.key}`));
+    currentTrack = null;
+  }
+}
+
+function stopAndHide() {
+  if (player && isPlayerReady) player.stopVideo();
+  currentTrack = null;
+  document.getElementById('widget').classList.remove('active');
+}
 </script>
 </body>
 </html>

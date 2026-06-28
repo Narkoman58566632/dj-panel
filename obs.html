@@ -2,243 +2,263 @@
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
-<title>OBS Widget</title>
-<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700&display=swap" rel="stylesheet">
-<style id="dynamic-styles">
-*{box-sizing:border-box;margin:0;padding:0;}
-body{background:transparent;font-family:'Unbounded',sans-serif;padding:16px;overflow:hidden;}
-@keyframes scroll{0%{transform:translateX(100%);}100%{transform:translateX(-100%);}}
-@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.6;}}
-@keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
-@keyframes fadeOut{from{opacity:1;transform:translateY(0);}to{opacity:0;transform:translateY(6px);}}
-.widget{
-  background:rgba(20,0,0,0.85);border:1px solid #c0392b;border-radius:12px;
-  padding:10px 16px;min-width:320px;max-width:480px;backdrop-filter:blur(4px);
-  transition:opacity 0.5s ease, transform 0.5s ease;
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StreamDJ — OBS Widget</title>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Стили по умолчанию, которые будут динамически перезаписываться из localStorage */
+:root {
+  --w-bg: #140000;
+  --w-border: #c0392b;
+  --w-title: #ffffff;
+  --w-from: #7a3535;
+  --w-label: #ff6060;
+  --w-pill: #c08080;
+  --w-fontsize: 13px;
+  --w-scroll-speed: 12s;
 }
-.widget.hidden{opacity:0;transform:translateY(8px);pointer-events:none;}
-.widget.visible{opacity:1;transform:translateY(0);animation:fadeIn 0.5s ease;}
-.top-row{display:flex;align-items:center;gap:10px;overflow:hidden;}
-.now-label{font-size:9px;color:#ff6060;text-transform:uppercase;letter-spacing:0.1em;white-space:nowrap;animation:pulse 1.5s ease-in-out infinite;}
-.track-scroll{flex:1;overflow:hidden;position:relative;}
-.track-text{font-size:13px;color:#fff;white-space:nowrap;display:inline-block;animation:scroll 12s linear infinite;}
-.track-text.short{animation:none;}
-.from-text{font-size:10px;color:#7a3535;margin-top:4px;}
-.queue-row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
-.q-pill{font-size:10px;color:#c08080;background:#2a0808;border:1px solid #3d1010;border-radius:99px;padding:2px 8px;white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: transparent; /* Полностью прозрачный фон для удобного захвата */
+  overflow: hidden;
+  font-family: 'Inter', sans-serif;
+  padding: 10px;
+}
+
+/* Контейнер виджета */
+.widget-container {
+  width: 460px;
+  height: 100px;
+  background: var(--w-bg);
+  border: 2px solid var(--w-border);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+  position: relative;
+  transition: all 0.3s ease;
+  opacity: 0; /* Изначально скрыт, появляется только если есть трек */
+}
+
+.widget-container.active {
+  opacity: 1;
+}
+
+/* Обложка (превью YouTube-видео) */
+.track-thumb {
+  width: 76px;
+  height: 76px;
+  border-radius: 8px;
+  background: #000;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.track-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Блок с текстовой информацией */
+.track-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Метка СЕЙЧАС ИГРАЕТ / ОЧЕРЕДЬ */
+.status-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.status-label {
+  font-family: 'Unbounded', sans-serif;
+  font-size: calc(var(--w-fontsize) - 4px);
+  font-weight: 700;
+  color: var(--w-label);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.queue-pill {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--w-pill);
+  color: var(--w-pill);
+  border-radius: 99px;
+  font-size: calc(var(--w-fontsize) - 4px);
+  padding: 1px 6px;
+  font-family: 'Unbounded', sans-serif;
+}
+
+/* Бегущая строка для названия трека */
+.marquee-container {
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+  height: calc(var(--w-fontsize) + 6px);
+}
+
+.marquee-text {
+  position: absolute;
+  white-space: nowrap;
+  font-size: var(--w-fontsize);
+  font-weight: 500;
+  color: var(--w-title);
+  animation: marquee var(--w-scroll-speed) linear infinite;
+  padding-right: 50px;
+}
+
+@keyframes marquee {
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-50%, 0, 0); }
+}
+
+/* Информация об авторе заказа */
+.track-author {
+  font-size: calc(var(--w-fontsize) - 2px);
+  color: var(--w-from);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 </style>
 </head>
 <body>
-<div class="widget hidden" id="widget">
-  <div class="top-row">
-    <span class="now-label" id="w-now-label">&#9835; грає</span>
-    <div class="track-scroll"><span class="track-text short" id="track-title"></span></div>
+
+<div class="widget-container" id="widget">
+  <div class="track-thumb">
+    <img id="thumb-img" src="" alt="">
   </div>
-  <div class="from-text" id="track-from"></div>
-  <div class="queue-row" id="queue-row"></div>
+  <div class="track-info">
+    <div class="status-wrapper">
+      <span class="status-label" id="status-text">ЗАРАЗ ГРАЄ</span>
+      <span class="queue-pill" id="queue-count">далі: 0</span>
+    </div>
+    <div class="marquee-container">
+      <div class="marquee-text" id="track-title">Завантаження...</div>
+    </div>
+    <div class="track-author" id="track-ordered-by">від: ...</div>
+  </div>
 </div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyD77vyKpxE-PDJhk4aS8N3_SBAIIwoXIKE",
-  authDomain: "livemusicrequests-71c75.firebaseapp.com",
-  databaseURL: "https://livemusicrequests-71c75-default-rtdb.firebaseio.com",
-  projectId: "livemusicrequests-71c75",
-  storageBucket: "livemusicrequests-71c75.firebasestorage.app",
-  messagingSenderId: "841403842500",
-  appId: "1:841403842500:web:4716afe909ddedec416e91"
+<script>
+const STORAGE_KEYS = {
+  QUEUE: 'streamdj_local_queue',
+  WIDGET_THEME: 'streamdj_local_widget_theme'
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+let currentTrackId = null;
 
-// Отримуємо UID з параметрів URL (?u=UID_СТРИМЕРА)
-const urlParams = new URLSearchParams(window.location.search);
-const USER_UID = urlParams.get('u') || 'default';
-
-// Формуємо динамічні шляхи до Firebase
-const queueRef = ref(db, USER_UID !== 'default' ? `users/${USER_UID}/queue` : 'queue');
-const controlRef = ref(db, USER_UID !== 'default' ? `users/${USER_UID}/control` : 'control');
-const themeRef = ref(db, `users/${USER_UID}/widget_theme`);
-
-const widget = document.getElementById('widget');
-let hideTimer = null;
-
-function showWidget() {
-  clearTimeout(hideTimer);
-  widget.classList.remove('hidden');
-  widget.classList.add('visible');
+// Функция для обновления визуальных стилей из localStorage
+function updateWidgetTheme() {
+  const saved = localStorage.getItem(STORAGE_KEYS.WIDGET_THEME);
+  if (!saved) return;
+  
+  try {
+    const t = JSON.parse(saved);
+    const root = document.documentElement;
+    
+    if (t.bg) root.style.setProperty('--w-bg', t.bg);
+    if (t.border) root.style.setProperty('--w-border', t.border);
+    if (t.title) root.style.setProperty('--w-title', t.title);
+    if (t.from) root.style.setProperty('--w-from', t.from);
+    if (t.label) root.style.setProperty('--w-label', t.label);
+    if (t.pill) root.style.setProperty('--w-pill', t.pill);
+    if (t.fontsize) root.style.setProperty('--w-w-fontsize', t.fontsize + 'px');
+    if (t.scroll) root.style.setProperty('--w-scroll-speed', t.scroll + 's');
+  } catch (e) {
+    console.error("Ошибка разбора темы виджета:", e);
+  }
 }
 
-function hideWidget() {
-  hideTimer = setTimeout(() => {
-    widget.classList.remove('visible');
-    widget.classList.add('hidden');
-  }, 1500);
-}
-
-// Застосування динамічної теми
-onValue(themeRef, (snap) => {
-  const t = snap.val();
-  if (!t) return;
+// Функция обновления контента треков
+function updateWidgetContent() {
+  const rawQueue = localStorage.getItem(STORAGE_KEYS.QUEUE);
+  const widgetContainer = document.getElementById('widget');
   
-  const styleEl = document.getElementById('dynamic-styles');
-  styleEl.innerHTML = `
-    *{box-sizing:border-box;margin:0;padding:0;}
-    body{background:transparent;font-family:'Unbounded',sans-serif;padding:16px;overflow:hidden;}
-    @keyframes scroll{0%{transform:translateX(100%);}100%{transform:translateX(-100%);}}
-    @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.6;}}
-    @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
-    @keyframes fadeOut{from{opacity:1;transform:translateY(0);}to{opacity:0;transform:translateY(6px);}}
-    .widget{
-      background:${t.bg || 'rgba(20,0,0,0.85)'};
-      border:1px solid ${t.border || '#c0392b'};
-      border-radius:12px;
-      padding:10px 16px;min-width:320px;max-width:480px;backdrop-filter:blur(4px);
-      transition:opacity 0.5s ease, transform 0.5s ease;
-    }
-    .widget.hidden{opacity:0;transform:translateY(8px);pointer-events:none;}
-    .widget.visible{opacity:1;transform:translateY(0);animation:fadeIn 0.5s ease;}
-    .top-row{display:flex;align-items:center;gap:10px;overflow:hidden;}
-    .now-label{font-size:9px;color:${t.label || '#ff6060'};text-transform:uppercase;letter-spacing:0.1em;white-space:nowrap;animation:pulse 1.5s ease-in-out infinite;}
-    .track-scroll{flex:1;overflow:hidden;position:relative;}
-    .track-text{font-size:${t.fontsize || 13}px;color:${t.title || '#fff'};white-space:nowrap;display:inline-block;animation:scroll ${t.scroll || 12}s linear infinite;}
-    .track-text.short{animation:none;}
-    .from-text{font-size:10px;color:${t.from || '#7a3535'};margin-top:4px;}
-    .queue-row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
-    .q-pill{font-size:10px;color:${t.pill || '#c08080'};background:rgba(0,0,0,0.2);border:1px solid ${t.border || '#3d1010'};border-radius:99px;padding:2px 8px;white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis;}
-  `;
-});
-
-let player = null;
-let ytReady = false;
-let currentKey = null;
-
-// Слухаємо команди панелі керування
-onValue(controlRef, (snap) => {
-  const data = snap.val();
-  if (!data || !player || !ytReady) return;
-  
-  if (data.action === 'pause') player.pauseVideo();
-  if (data.action === 'play') player.playVideo();
-  if (data.action === 'skip') markDoneAndNext();
-  if (data.action === 'replay') player.seekTo(0);
-});
-
-const tag = document.createElement('script');
-tag.src = 'https://www.youtube.com/iframe_api';
-document.head.appendChild(tag);
-
-window.onYouTubeIframeAPIReady = function() {
-  ytReady = true;
-  player = new YT.Player('yt-player', {
-    height:'1', width:'1',
-    playerVars: { 
-      autoplay: 1, 
-      controls: 0, 
-      mute: 1, // Обов'язково запускаємо без звуку, щоб обійти блокування Autoplay
-      origin: window.location.origin 
-    },
-    events:{
-      onReady: function(e) {
-        // Як тільки плеєр готовий, намагаємося запустити чергу
-        tryPlay();
-      },
-      onStateChange: function(e) {
-        // Коли відео починає грати (YT.PlayerState.PLAYING = 1), повертаємо йому звук
-        if (e.data === YT.PlayerState.PLAYING) {
-          player.unMute();
-          player.setVolume(100);
-        }
-        if (e.data === YT.PlayerState.ENDED) {
-          markDoneAndNext();
-        }
-      }
-    }
-  });
-};
-
-const playerDiv = document.createElement('div');
-playerDiv.id = 'yt-player';
-playerDiv.style.cssText = 'position:fixed;bottom:-10px;left:-10px;width:1px;height:1px;opacity:0;pointer-events:none;';
-document.body.appendChild(playerDiv);
-
-let queue = [];
-
-onValue(queueRef, (snapshot) => {
-  const data = snapshot.val();
-  if (!data) { queue = []; updateUI(); return; }
-  queue = Object.entries(data)
-    .map(([k,v]) => ({...v, key: k}))
-    .filter(v => v.status === 'approved' || v.status === 'playing')
-    .sort((a,b) => a.ts - b.ts);
-  updateUI();
-  tryPlay();
-});
-
-function tryPlay() {
-  if (!ytReady || !player || !player.loadVideoById) return;
-  
-  const playing = queue.find(t => t.status === 'playing');
-  if (playing) {
-    if (playing.key !== currentKey) {
-      currentKey = playing.key;
-      player.loadVideoById(playing.id);
-    }
+  if (!rawQueue) {
+    widgetContainer.classList.remove('active');
     return;
   }
   
-  const next = queue.find(t => t.status === 'approved');
-  if (next) {
-    import("https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js").then(({ref: dbRef, update}) => {
-      const targetPath = USER_UID !== 'default' ? `users/${USER_UID}/queue/${next.key}` : `queue/${next.key}`;
-      update(dbRef(getDatabase(), targetPath), {status: 'playing'});
-    });
+  try {
+    const queueData = JSON.parse(rawQueue);
+    const allItems = Object.values(queueData);
+    
+    // Ищем трек со статусом 'playing'
+    const playingTrack = allItems.find(item => item.status === 'playing');
+    
+    // Считаем сколько одобренных треков осталось в очереди после текущего
+    const approvedCount = allItems.filter(item => item.status === 'approved').length;
+    document.getElementById('queue-count').textContent = `далі: ${approvedCount}`;
+    
+    if (!playingTrack) {
+      // Если прямо сейчас ничего не играет, виджет плавно скрывается
+      widgetContainer.classList.remove('active');
+      currentTrackId = null;
+      return;
+    }
+    
+    // Если трек изменился — обновляем интерфейс
+    if (currentTrackId !== playingTrack.id) {
+      currentTrackId = playingTrack.id;
+      
+      // Установка превью трека
+      document.getElementById('thumb-img').src = `https://img.youtube.com/vi/${playingTrack.id}/mqdefault.jpg`;
+      
+      // Логика бесконечной бегущей строки (дублируем текст, чтобы не было пустот при прокрутке)
+      const titleEl = document.getElementById('track-title');
+      const fullTitle = playingTrack.title || 'Без назви';
+      titleEl.textContent = fullTitle;
+      
+      // Проверяем длину строки: если она длинная, дублируем её для создания бесшовной анимации
+      if (fullTitle.length > 25) {
+        titleEl.innerHTML = `${escapeHtml(fullTitle)} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ${escapeHtml(fullTitle)}`;
+        titleEl.style.animationPlayState = 'running';
+      } else {
+        titleEl.style.animation = 'none'; // Если короткий, не крутим
+        titleEl.style.position = 'relative';
+      }
+      
+      // Кем заказан
+      document.getElementById('track-ordered-by').textContent = `від: ${playingTrack.from || 'Глядача'}`;
+      
+      // Показываем виджет
+      widgetContainer.classList.add('active');
+    }
+    
+  } catch (e) {
+    console.error("Ошибка обновления контента виджета:", e);
   }
 }
 
-function markDoneAndNext() {
-  const playing = queue.find(t => t.status === 'playing');
-  if (!playing) return;
-  import("https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js").then(({ref: dbRef, remove}) => {
-    const targetPath = USER_UID !== 'default' ? `users/${USER_UID}/queue/${playing.key}` : `queue/${playing.key}`;
-    remove(dbRef(getDatabase(), targetPath));
-    currentKey = null;
-  });
+function escapeHtml(str) {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-function updateUI() {
-  const playing = queue.find(t => t.status === 'playing');
-  const rest = queue.filter(t => t.status === 'approved');
-  const titleEl = document.getElementById('track-title');
-  const fromEl = document.getElementById('track-from');
-  const qRow = document.getElementById('queue-row');
+// Запускаем постоянный мониторинг изменений localStorage (каждые 500мс)
+// Это заменяет real-time сокеты Firebase для работы в рамках одного браузера
+setInterval(() => {
+  updateWidgetTheme();
+  updateWidgetContent();
+}, 500);
 
-  if (playing) {
-    showWidget();
-    titleEl.textContent = playing.title;
-    fromEl.textContent = 'від ' + playing.from;
-    titleEl.className = playing.title.length > 30 ? 'track-text' : 'track-text short';
-  } else if (rest.length > 0) {
-    showWidget();
-    titleEl.textContent = '';
-    fromEl.textContent = '';
-    titleEl.className = 'track-text short';
-  } else {
-    hideWidget();
-    titleEl.textContent = '';
-    fromEl.textContent = '';
-  }
-
-  qRow.innerHTML = rest.length > 0
-    ? rest.slice(0,4).map(t => `<span class="q-pill">${t.title}</span>`).join('')
-    : '';
-}
-
-setTimeout(tryPlay, 2000);
+// Первичный запуск при открытии страницы
+updateWidgetTheme();
+updateWidgetContent();
 </script>
+
 </body>
 </html>

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>StreamDJ — панель</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎵</text></svg>">
+<link rel="icon" type="image/png" href="favicon.png">
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -539,12 +539,12 @@ window.switchTab=function(name){
 
 // ── PANEL COLORS ──────────────────────────────────────────────────
 const PRESETS={
-  red:    {'--bg':'#1a0000','--bg2':'#240808','--bg3':'#300d0d','--border':'#3d1010','--border2':'#4a1515','--accent':'#ff4444','--accent2':'#c0392b','--text':'#f0c0c0','--text2':'#c07070','--text3':'#ffffff'},
-  dark:   {'--bg':'#0f0f13','--bg2':'#1a1a22','--bg3':'#22222d','--border':'#2e2e3d','--border2':'#3a3a50','--accent':'#7c6aff','--accent2':'#5a4ad4','--text':'#e8e8ff','--text2':'#8888bb','--text3':'#ffffff'},
-  blue:   {'--bg':'#000d1f','--bg2':'#06182e','--bg3':'#0a2240','--border':'#0e3060','--border2':'#1a4a80','--accent':'#3db8ff','--accent2':'#1a8fd4','--text':'#c0e4ff','--text2':'#5a9acc','--text3':'#ffffff'},
-  purple: {'--bg':'#0d0015','--bg2':'#180a28','--bg3':'#221038','--border':'#3a1a60','--border2':'#4e2480','--accent':'#c87fff','--accent2':'#8a3fd4','--text':'#e8c8ff','--text2':'#9a60cc','--text3':'#ffffff'},
-  green:  {'--bg':'#00120a','--bg2':'#071d10','--bg3':'#0c2818','--border':'#0f3d20','--border2':'#185530','--accent':'#3dff88','--accent2':'#1aad55','--text':'#b0ffcc','--text2':'#50bb80','--text3':'#ffffff'},
-  orange: {'--bg':'#180800','--bg2':'#251208','--bg3':'#321a0d','--border':'#5a2a08','--border2':'#7a3a10','--accent':'#ff8c3d','--accent2':'#d45a10','--text':'#ffd4a0','--text2':'#cc7a40','--text3':'#ffffff'},
+  red:{'--bg':'#1a0000','--bg2':'#240808','--bg3':'#300d0d','--border':'#3d1010','--border2':'#4a1515','--accent':'#ff4444','--accent2':'#c0392b','--text':'#e0a0a0','--text2':'#7a3535','--text3':'#f0c0c0'},
+  dark:{'--bg':'#0a0a0a','--bg2':'#161616','--bg3':'#202020','--border':'#2a2a2a','--border2':'#333333','--accent':'#ffffff','--accent2':'#cccccc','--text':'#e0e0e0','--text2':'#888888','--text3':'#f0f0f0'},
+  blue:{'--bg':'#000a1a','--bg2':'#071428','--bg3':'#0d1f3d','--border':'#1a2f5a','--border2':'#243f7a','--accent':'#4da6ff','--accent2':'#2980b9','--text':'#a0c8f0','--text2':'#3a6090','--text3':'#c0deff'},
+  purple:{'--bg':'#0d001a','--bg2':'#170828','--bg3':'#22103d','--border':'#3a1a5a','--border2':'#4a2070','--accent':'#bf7fff','--accent2':'#7b2fbe','--text':'#d0a0f0','--text2':'#6a3590','--text3':'#e8c8ff'},
+  green:{'--bg':'#001a0a','--bg2':'#082414','--bg3':'#0d3020','--border':'#1a4a28','--border2':'#246035','--accent':'#44ff88','--accent2':'#27ae60','--text':'#a0e0b8','--text2':'#357a50','--text3':'#c0f0d0'},
+  orange:{'--bg':'#1a0800','--bg2':'#240f08','--bg3':'#30160d','--border':'#5a2a10','--border2':'#7a3a15','--accent':'#ff8c44','--accent2':'#c05a20','--text':'#f0c8a0','--text2':'#8a5a35','--text3':'#ffe0c0'},
 };
 const COLOR_FIELDS=[{css:'--bg',id:'c-bg',hid:'h-bg'},{css:'--bg2',id:'c-bg2',hid:'h-bg2'},{css:'--accent',id:'c-accent',hid:'h-accent'},{css:'--border',id:'c-border',hid:'h-border'},{css:'--text',id:'c-text',hid:'h-text'},{css:'--text2',id:'c-text2',hid:'h-text2'}];
 function applyVars(v){Object.entries(v).forEach(([k,val])=>document.documentElement.style.setProperty(k,val));}

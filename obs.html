@@ -49,7 +49,7 @@ body{background:transparent;font-family:'Unbounded',sans-serif;padding:16px;over
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getDatabase, ref, onValue, push, remove, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyD77vyKpxE-PDJhk4aS8N3_SBAIIwoXIKE",
@@ -206,10 +206,30 @@ function tryPlay() {
 function markDoneAndNext() {
   if (!currentKey) return;
   const keyToRemove = currentKey;
+  const played = queue.find(t => t.key === keyToRemove);
   currentKey = null;
-  import("https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js").then(({ref:dbRef, remove}) => {
-    remove(dbRef(db, `users/${uid}/queue/${keyToRemove}`));
-  });
+  if (played) {
+    const hRef = ref(db, `users/${uid}/history`);
+    push(hRef, {
+      title: played.title || '', from: played.from || '', id: played.id || '', playedAt: Date.now()
+    }).then(() => trimHistory(hRef)).catch(() => {});
+  }
+  remove(ref(db, `users/${uid}/queue/${keyToRemove}`));
+}
+
+const HISTORY_LIMIT = 130;
+function trimHistory(hRef) {
+  get(hRef).then(snap => {
+    const data = snap.val();
+    if (!data) return;
+    const entries = Object.entries(data).sort((a, b) => (a[1].playedAt || 0) - (b[1].playedAt || 0));
+    const excess = entries.length - HISTORY_LIMIT;
+    if (excess > 0) {
+      for (let i = 0; i < excess; i++) {
+        remove(ref(db, `users/${uid}/history/${entries[i][0]}`));
+      }
+    }
+  }).catch(() => {});
 }
 
 function showWidget() {

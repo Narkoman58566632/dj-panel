@@ -126,6 +126,17 @@ body{background:var(--bg);min-height:100vh;font-family:'Inter',sans-serif;paddin
 .pl-mode-btn{background:var(--bg3);color:var(--text2);border:1px solid var(--border2);border-radius:8px;padding:6px 14px;font-size:11px;cursor:pointer;font-family:'Unbounded',sans-serif;transition:all 0.2s;}
 .pl-mode-btn.active{background:var(--green-bg);color:var(--green);border-color:var(--green-border);}
 .pl-fallback-label{font-size:11px;color:var(--text2);}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;}
+.stat-card{background:var(--bg3);border:1px solid var(--border2);border-radius:14px;padding:18px 14px;text-align:center;}
+.stat-num{font-family:'Unbounded',sans-serif;font-size:28px;color:var(--accent);margin-bottom:6px;line-height:1;}
+.stat-label{font-size:11px;color:var(--text2);}
+.hist-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);}
+.hist-item:last-child{border-bottom:none;}
+.hist-rank{font-family:'Unbounded',sans-serif;font-size:12px;color:var(--text2);min-width:22px;flex-shrink:0;}
+.hist-info{flex:1;min-width:0;}
+.hist-name{font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.hist-meta{font-size:11px;color:var(--text2);margin-top:2px;}
+.hist-count{background:var(--bg2);border:1px solid var(--border2);border-radius:99px;font-size:11px;color:var(--text);padding:3px 10px;white-space:nowrap;flex-shrink:0;font-family:'Unbounded',sans-serif;}
 
 /* ── Центрування контенту на великих екранах (ПК) ── */
 #app{max-width:960px;margin:0 auto;}
@@ -157,6 +168,10 @@ body{background:var(--bg);min-height:100vh;font-family:'Inter',sans-serif;paddin
   .queue-item{flex-wrap:wrap;}
   .twitch-status{gap:8px;}
   .modal{padding:20px;width:92%;}
+  .stat-grid{grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;}
+  .stat-card{padding:14px 8px;}
+  .stat-num{font-size:22px;}
+  .hist-item{flex-wrap:wrap;}
 }
 
 /* ── Дуже маленькі екрани ── */
@@ -217,6 +232,7 @@ body{background:var(--bg);min-height:100vh;font-family:'Inter',sans-serif;paddin
     <div class="tab" onclick="switchTab('playlists')" id="t-playlists">📂 Плейлисти</div>
     <div class="tab" onclick="switchTab('twitch')" id="t-twitch">🟣 Twitch</div>
     <div class="tab" onclick="switchTab('settings')" id="t-settings">⚙️ Вигляд</div>
+    <div class="tab" onclick="switchTab('stats')" id="t-stats">📊 Статистика</div>
   </div>
 
   <div class="tab-content active" id="tab-queue">
@@ -334,6 +350,40 @@ body{background:var(--bg);min-height:100vh;font-family:'Inter',sans-serif;paddin
   </div>
 </div>
 
+  <div class="tab-content" id="tab-stats">
+    <div class="section">
+      <div class="section-title" id="s-stats-overview">📊 огляд</div>
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-num" id="stat-total">0</div>
+          <div class="stat-label" id="stat-total-label">Всього зіграно треків</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="stat-session">0</div>
+          <div class="stat-label" id="stat-session-label">За цю сесію</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="stat-viewers">0</div>
+          <div class="stat-label" id="stat-viewers-label">Унікальних глядачів</div>
+        </div>
+      </div>
+      <button class="settings-reset" onclick="resetSessionStats()" id="b-reset-session" style="margin-top:14px;">↺ Скинути лічильник сесії</button>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span id="s-top-viewers">🏆 топ глядачів</span></div>
+      <div id="top-viewers-list"><div class="empty" id="empty-top-viewers">поки немає даних</div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span id="s-recent-history">🕘 останні зіграні треки</span></div>
+      <div id="history-list"><div class="empty" id="empty-history">історія порожня</div></div>
+      <button class="settings-reset" onclick="clearHistory()" id="b-clear-history" style="margin-top:14px;color:var(--red-btn-text);">🗑️ Очистити всю історію</button>
+    </div>
+  </div>
+
+</div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getDatabase, ref, onValue, update, remove, push, set, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
@@ -365,6 +415,8 @@ let myPlaylists = [];
 let fallbackMode = 'off';
 let fallbackIndex = 0;
 let activeFallbackPlaylistId = null;
+let historyItems = [];
+let sessionStart = Date.now();
 
 const LANGUAGES = {
   uk: {
@@ -393,7 +445,12 @@ const LANGUAGES = {
     m_obs_copied:"✓ Скопійовано!",m_obs_close:"Закрити",log_auth_ok:"✓ Авторизовано як ",log_ws_open:"WebSocket відкрито",
     log_ws_err:"WS помилка",log_ws_close:"WS закрито, повтор через 10с...",log_sub_old:"Видалено {num} стару підписку",
     log_sub_ok:"✓ Підписка активна!",log_skip_reward:"Пропускаю (не та нагорода)",log_not_url:"❌ Не YouTube посилання від ",
-    log_not_pl:"❌ Не плейлист від ",log_firebase_err:"Firebase помилка: "
+    log_not_pl:"❌ Не плейлист від ",log_firebase_err:"Firebase помилка: ",
+    tab_stats:"📊 Статистика",s_stats_overview:"📊 огляд",stat_total_label:"Всього зіграно треків",
+    stat_session_label:"За цю сесію",stat_viewers_label:"Унікальних глядачів",b_reset_session:"↺ Скинути лічильник сесії",
+    s_top_viewers:"🏆 топ глядачів",empty_top_viewers:"поки немає даних",times_word:"треків",
+    s_recent_history:"🕘 останні зіграні треки",empty_history:"історія порожня",b_clear_history:"🗑️ Очистити всю історію",
+    confirm_clear_history:"Видалити всю історію назавжди? Це не можна скасувати.",just_now:"щойно",min_ago:"хв тому",hour_ago:"год тому",day_ago:"дн тому"
   },
   ru: {
     loading:"Загрузка...",subtitle_suffix:" — управление музыкой",obs_btn:"🎬 OBS линк",logout:"Выйти",
@@ -421,7 +478,12 @@ const LANGUAGES = {
     m_obs_copied:"✓ Скопировано!",m_obs_close:"Закрыть",log_auth_ok:"✓ Авторизован как ",log_ws_open:"WebSocket открыт",
     log_ws_err:"WS ошибка",log_ws_close:"WS закрыт, повтор через 10с...",log_sub_old:"Удалено {num} старых подписок",
     log_sub_ok:"✓ Подписка активна!",log_skip_reward:"Пропускаю (не та награда)",log_not_url:"❌ Не YouTube ссылка от ",
-    log_not_pl:"❌ Не плейлист от ",log_firebase_err:"Firebase ошибка: "
+    log_not_pl:"❌ Не плейлист от ",log_firebase_err:"Firebase ошибка: ",
+    tab_stats:"📊 Статистика",s_stats_overview:"📊 обзор",stat_total_label:"Всего сыграно треков",
+    stat_session_label:"За эту сессию",stat_viewers_label:"Уникальных зрителей",b_reset_session:"↺ Сбросить счётчик сессии",
+    s_top_viewers:"🏆 топ зрителей",empty_top_viewers:"пока нет данных",times_word:"треков",
+    s_recent_history:"🕘 последние сыгранные треки",empty_history:"история пуста",b_clear_history:"🗑️ Очистить всю историю",
+    confirm_clear_history:"Удалить всю историю навсегда? Это нельзя отменить.",just_now:"только что",min_ago:"мин назад",hour_ago:"ч назад",day_ago:"дн назад"
   },
   en: {
     loading:"Loading...",subtitle_suffix:" — music control",obs_btn:"🎬 OBS Link",logout:"Logout",
@@ -449,7 +511,12 @@ const LANGUAGES = {
     m_obs_copied:"✓ Copied!",m_obs_close:"Close",log_auth_ok:"✓ Authorized as ",log_ws_open:"WebSocket opened",
     log_ws_err:"WS error",log_ws_close:"WS closed, retrying in 10s...",log_sub_old:"Removed {num} old subscription(s)",
     log_sub_ok:"✓ Subscription active!",log_skip_reward:"Skipping (wrong reward name)",log_not_url:"❌ Not a YouTube link from ",
-    log_not_pl:"❌ Not a playlist link from ",log_firebase_err:"Firebase error: "
+    log_not_pl:"❌ Not a playlist link from ",log_firebase_err:"Firebase error: ",
+    tab_stats:"📊 Stats",s_stats_overview:"📊 overview",stat_total_label:"Total tracks played",
+    stat_session_label:"This session",stat_viewers_label:"Unique viewers",b_reset_session:"↺ Reset session counter",
+    s_top_viewers:"🏆 top viewers",empty_top_viewers:"no data yet",times_word:"tracks",
+    s_recent_history:"🕘 recently played tracks",empty_history:"history is empty",b_clear_history:"🗑️ Clear all history",
+    confirm_clear_history:"Delete the entire history forever? This cannot be undone.",just_now:"just now",min_ago:"min ago",hour_ago:"h ago",day_ago:"d ago"
   }
 };
 
@@ -522,11 +589,22 @@ function applyLocalization() {
   document.getElementById('m-obs-copy').textContent = t.m_obs_copy;
   document.getElementById('m-obs-close').textContent = t.m_obs_close;
   document.getElementById('s-queue-title').textContent = t.s_queue_title;
+  document.getElementById('t-stats').textContent = t.tab_stats;
+  document.getElementById('s-stats-overview').textContent = t.s_stats_overview;
+  document.getElementById('stat-total-label').textContent = t.stat_total_label;
+  document.getElementById('stat-session-label').textContent = t.stat_session_label;
+  document.getElementById('stat-viewers-label').textContent = t.stat_viewers_label;
+  document.getElementById('b-reset-session').textContent = t.b_reset_session;
+  document.getElementById('s-top-viewers').textContent = t.s_top_viewers;
+  document.getElementById('s-recent-history').textContent = t.s_recent_history;
+  document.getElementById('b-clear-history').textContent = t.b_clear_history;
   updateTwitchUIState();
+  renderStats();
 }
 
 function qRef()       { return ref(db, `users/${uid}/queue`); }
 function ctlRef()     { return ref(db, `users/${uid}/control`); }
+function historyRef() { return ref(db, `users/${uid}/history`); }
 function wtRef()      { return ref(db, `users/${uid}/widget_theme`); }
 function plRef()      { return ref(db, `users/${uid}/playlists`); }
 function plCfgRef()   { return ref(db, `users/${uid}/playlist_config`); }
@@ -578,6 +656,7 @@ onAuthStateChanged(auth, async (user) => {
   loadWidgetTheme();
   initPlaylists();
   initRewards();
+  initHistory();
 });
 
 window.doLogout = async function() {
@@ -970,8 +1049,73 @@ window.stopCurrentTrack=()=>set(ctlRef(),{action:'pause',ts:Date.now()});
 window.resumeCurrentTrack=()=>{if(!hasApprovedTracks())return;set(ctlRef(),{action:'play',ts:Date.now()});};
 window.skipCurrent=()=>set(ctlRef(),{action:'skip',ts:Date.now()});
 window.replayCurrentTrack=()=>{if(!hasApprovedTracks())return;set(ctlRef(),{action:'replay',ts:Date.now()});};
+
+// ── STATS / HISTORY ──
+function initHistory(){
+  onValue(historyRef(),(snapshot)=>{
+    const data=snapshot.val();
+    historyItems=data?Object.entries(data).map(([k,v])=>({...v,key:k})):[];
+    renderStats();
+  });
+}
+function timeAgo(ts){
+  const t=LANGUAGES[currentLang];
+  const diffSec=Math.floor((Date.now()-ts)/1000);
+  if(diffSec<60) return t.just_now;
+  if(diffSec<3600) return Math.floor(diffSec/60)+' '+t.min_ago;
+  if(diffSec<86400) return Math.floor(diffSec/3600)+' '+t.hour_ago;
+  return Math.floor(diffSec/86400)+' '+t.day_ago;
+}
+function renderStats(){
+  const t=LANGUAGES[currentLang];
+  const totalEl=document.getElementById('stat-total');
+  const sessionEl=document.getElementById('stat-session');
+  const viewersEl=document.getElementById('stat-viewers');
+  if(!totalEl) return;
+
+  const sorted=[...historyItems].sort((a,b)=>b.playedAt-a.playedAt);
+  const sessionCount=historyItems.filter(h=>h.playedAt>=sessionStart).length;
+
+  const viewerCounts={};
+  historyItems.forEach(h=>{ const name=h.from||'?'; viewerCounts[name]=(viewerCounts[name]||0)+1; });
+  const topViewers=Object.entries(viewerCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
+
+  totalEl.textContent=historyItems.length;
+  sessionEl.textContent=sessionCount;
+  viewersEl.textContent=Object.keys(viewerCounts).length;
+
+  const topEl=document.getElementById('top-viewers-list');
+  topEl.innerHTML=topViewers.length===0
+    ? `<div class="empty">${t.empty_top_viewers}</div>`
+    : topViewers.map(([name,count],i)=>`
+      <div class="hist-item">
+        <div class="hist-rank">${['🥇','🥈','🥉'][i]||('#'+(i+1))}</div>
+        <div class="hist-info"><div class="hist-name">${name}</div></div>
+        <div class="hist-count">${count} ${t.times_word}</div>
+      </div>`).join('');
+
+  const histEl=document.getElementById('history-list');
+  const recent=sorted.slice(0,10);
+  histEl.innerHTML=recent.length===0
+    ? `<div class="empty">${t.empty_history}</div>`
+    : recent.map(h=>`
+      <div class="hist-item">
+        <div class="hist-info">
+          <div class="hist-name">${h.title||''}</div>
+          <div class="hist-meta">${t.from_user} ${h.from||''} · ${timeAgo(h.playedAt)}</div>
+        </div>
+      </div>`).join('');
+}
+window.resetSessionStats=function(){
+  sessionStart=Date.now();
+  renderStats();
+};
+window.clearHistory=async function(){
+  if(!confirm(LANGUAGES[currentLang].confirm_clear_history))return;
+  await remove(historyRef());
+};
 window.switchTab=function(name){
-  const names=['queue','playlists','twitch','settings'];
+  const names=['queue','playlists','twitch','settings','stats'];
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',names[i]===name));
   document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
